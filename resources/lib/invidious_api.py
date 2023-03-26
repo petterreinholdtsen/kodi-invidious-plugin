@@ -173,7 +173,12 @@ class InvidiousAPIClient:
 
         return self.parse_response(response)
 
-    def fetch_special_list(self, special_list_name):
-        response = self.make_get_request(special_list_name)
+    def fetch_trending(self):
+        response = self.make_get_request("trending")
+
+        return self.parse_video_list_response(response)
+
+    def fetch_popular(self):
+        response = self.make_get_request("popular")
 
         return self.parse_response(response)
