@@ -14,6 +14,7 @@ VideoListItem = namedtuple("SearchResult",
         "thumbnail_url",
         "view_count",
         "published",
+        "duration",
     ]
 )
 
@@ -67,6 +68,7 @@ class InvidiousAPIClient:
                 thumbnail_url,
                 video["viewCount"],
                 video["published"],
+                video["lengthSeconds"]
             )
 
     def search(self, *terms):

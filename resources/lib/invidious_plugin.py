@@ -81,6 +81,7 @@ class InvidiousPlugin:
                 "credits": video.author,
                 "date": datestr,
                 "dateadded": datestr,
+                "duration": video.duration
             })
 
             # if this is NOT set, the plugin is called with an invalid handle when trying to play this item
