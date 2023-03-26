@@ -119,7 +119,11 @@ class InvidiousPlugin:
             if result.type not in ['video', 'channel', 'playlist']:
                 raise RuntimeError("unknown result type " + result.type)
 
-            list_item = xbmcgui.ListItem(result.heading)
+            if video.author:
+                heading = f"[B]{video.author}[/B] - {result.heading}"
+            else:
+                heading = result.heading
+            list_item = xbmcgui.ListItem(heading)
             list_item.setArt({
                 "thumb": result.thumbnail_url,
             })
@@ -133,9 +137,9 @@ class InvidiousPlugin:
                 datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
 
                 list_item.setInfo("video", {
-                    "title": result.heading,
+                    "title": heading,
                     "mediatype": "video",
-                    "plot": result.description,
+                    "plot": f"{title}\n\n{result.description}",
                     "credits": result.author,
                     "date": datestr,
                     "dateadded": datestr,
