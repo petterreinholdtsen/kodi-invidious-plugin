@@ -2,8 +2,7 @@
 
 This plugin provides an [Invidious](https://invidio.us) client for [Kodi](https://kodi.tv). Invidious is a privacy-friendly web frontend to YouTube.
 
-**Note:** Currently, this plugin only works with Kodi 19 and newer. You can use the [kodi-18 tag](https://github.com/petterreinholdtsen/kodi-invidious-plugin/releases/tag/kodi-18) for version 18.
-
+**Note:** Currently, this plugin only works with Kodi 19 and newer.
 
 ## Installation
 
