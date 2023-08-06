@@ -18,7 +18,7 @@
         <language></language>
         <platform>all</platform>
         <license>MIT</license>
-        <source>https://github.com/TheAssassin/kodi-invidious-plugin</source>
+        <source>https://github.com/petterreinholdtsen/kodi-invidious-plugin</source>
         <assets>
             <icon>resources/icon.png</icon>
         </assets>
