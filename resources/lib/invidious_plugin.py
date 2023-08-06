@@ -5,6 +5,7 @@ import sys
 from urllib.parse import urlencode
 from urllib.parse import parse_qs
 
+import requests
 import xbmc
 import xbmcgui
 import xbmcaddon
@@ -26,7 +27,27 @@ class InvidiousPlugin:
         self.args = args
 
         instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
-        self.api_client = invidious_api.InvidiousAPIClient(instance_url)
+        if 'auto' == instance_url:
+            xbmc.log('Picking Invidious instance automatically.', xbmc.LOGNOTICE)
+            instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
+            response = requests.get(instancesurl, timeout=5)
+            data = response.json()
+            for instanceinfo in data:
+                xbmc.log('Considering Invidious instance ' + str(instanceinfo), xbmc.LOGDEBUG)
+                instancename, instance = instanceinfo
+                if 'https' == instance['type']:
+                    instance_url = instance['uri']
+                    xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGNOTICE)
+                    break
+            if 'auto' == instance_url:
+                dialog = xbmcgui.Dialog()
+                dialog.notification(
+                    'No working instance URL found',
+                    'No working https type instance returned from api.invidious.io.'
+                    "error"
+                )
+            else:
+                self.api_client = invidious_api.InvidiousAPIClient(instance_url)
 
     def build_url(self, action, **kwargs):
         if not action:
