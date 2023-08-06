@@ -2,7 +2,7 @@
 <addon id="plugin.video.invidious"
   name="Invidious"
   version="0.1.0+matrix.1"
-  provider-name="TheAssassin">
+  provider-name="petterreinholdtsen">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.requests" version="2.22.0"/>

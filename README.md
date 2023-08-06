@@ -2,7 +2,7 @@
 
 This plugin provides an [Invidious](https://invidio.us) client for [Kodi](https://kodi.tv). Invidious is a privacy-friendly web frontend to YouTube.
 
-**Note:** Currently, this plugin only works with Kodi 19 and newer. You can use the [kodi-18 tag](https://github.com/TheAssassin/kodi-invidious-plugin/releases/tag/kodi-18) for version 18.
+**Note:** Currently, this plugin only works with Kodi 19 and newer. You can use the [kodi-18 tag](https://github.com/petterreinholdtsen/kodi-invidious-plugin/releases/tag/kodi-18) for version 18.
 
 
 ## Installation
@@ -11,7 +11,7 @@ To keep track with development, it is recommended to install the plugin with git
 
 ```shell script
 # please change the destination if necessary
-git clone https://github.com/TheAssassin/kodi-invidious-plugin.git ~/.kodi/addons/plugin.video.invidious
+git clone https://github.com/petterreinholdtsen/kodi-invidious-plugin.git ~/.kodi/addons/plugin.video.invidious
 
 # on an embedded device (e.g., an X96 Mini running CoreELEC, you need to clone to /storage/.kodi/addons/plugin.video.invidious
 ```
@@ -24,7 +24,7 @@ cd ~/.kodi/addons/
 
 # download a zip archive
 mkdir plugin.video.invidious
-wget https://github.com/TheAssassin/kodi-invidious-plugin/archive/master.tar.gz -O - | tar xz --strip-components=1 -C plugin.video.invidious
+wget https://github.com/petterreinholdtsen/kodi-invidious-plugin/archive/master.tar.gz -O - | tar xz --strip-components=1 -C plugin.video.invidious
 ```
 
 It is strongly recommended to use git instead of an archive, as it makes updating the plugin a lot easier.
