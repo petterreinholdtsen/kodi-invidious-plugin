@@ -14,6 +14,7 @@ import xbmcplugin
 import xbmcvfs
 
 import inputstreamhelper
+from infotagger.listitem import ListItemInfoTag
 
 import invidious_api
 
@@ -132,7 +133,8 @@ class InvidiousPlugin:
             if 'video' == result.type:
                 datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
 
-                list_item.setInfo("video", {
+                info_tag = ListItemInfoTag(list_item, 'video')
+                info_tag.set_info({
                     "title": result.heading,
                     "mediatype": "video",
                     "plot": result.description,
@@ -222,7 +224,8 @@ class InvidiousPlugin:
             listitem = xbmcgui.ListItem(path=url)
 
         datestr = datetime.utcfromtimestamp(video_info["published"]).date().isoformat()
-        listitem.setInfo('video', {
+        info_tag = ListItemInfoTag(listitem, 'video')
+        info_tag.set_info({
                 "title": video_info["title"],
                 "mediatype": "video",
                 "plot": video_info["description"],
