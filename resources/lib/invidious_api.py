@@ -47,7 +47,7 @@ class InvidiousAPIClient:
     def parse_video_list_response(self, response):
         data = response.json()
         for video in data:
-            if not video["type"] == "video":
+            if video["type"] not in ["video", "shortVideo"] or video["lengthSeconds"] > 0:
                 continue
             for thumb in video["videoThumbnails"]:
                 # high appears to be ~480x360, which is a reasonable trade-off
@@ -59,7 +59,7 @@ class InvidiousAPIClient:
             # as a fallback, we just use the last one in the list (which is usually the lowest quality)
             else:
                 thumbnail_url = video["videoThumbnails"][-1]["url"]
-        
+
             yield VideoListItem(
                 video["videoId"],
                 video["title"],
