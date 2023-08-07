@@ -28,7 +28,7 @@ class InvidiousPlugin:
 
         instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
         if 'auto' == instance_url:
-            xbmc.log('Picking Invidious instance automatically.', xbmc.LOGNOTICE)
+            xbmc.log('Picking Invidious instance automatically.', xbmc.LOGINFO)
             instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
             response = requests.get(instancesurl, timeout=5)
             data = response.json()
@@ -37,7 +37,7 @@ class InvidiousPlugin:
                 instancename, instance = instanceinfo
                 if 'https' == instance['type']:
                     instance_url = instance['uri']
-                    xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGNOTICE)
+                    xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
                     break
             if 'auto' == instance_url:
                 dialog = xbmcgui.Dialog()
