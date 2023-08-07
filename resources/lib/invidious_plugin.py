@@ -36,18 +36,24 @@ class InvidiousPlugin:
                 xbmc.log('Considering Invidious instance ' + str(instanceinfo), xbmc.LOGDEBUG)
                 instancename, instance = instanceinfo
                 if 'https' == instance['type']:
-                    instance_url = instance['uri']
-                    xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
-                    break
+                    prospective_url = instance['uri']
+                    # Make sure the instance work for us.  This avoid
+                    # those rejecting us with HTTP status 429.
+                    api_client = invidious_api.InvidiousAPIClient(prospective_url)
+                    if api_client.fetch_special_list(self.SPECIAL_LISTS[0]):
+                        instance_url = prospective_url
+                        xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
+                        break
             if 'auto' == instance_url:
+                xbmc.log('No working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
                 dialog = xbmcgui.Dialog()
                 dialog.notification(
                     'No working instance URL found',
                     'No working https type instance returned from api.invidious.io.'
                     "error"
                 )
-            else:
-                self.api_client = invidious_api.InvidiousAPIClient(instance_url)
+                raise ValueError("unable to find working instance")
+        self.api_client = invidious_api.InvidiousAPIClient(instance_url)
 
     def build_url(self, action, **kwargs):
         if not action:
