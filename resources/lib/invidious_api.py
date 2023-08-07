@@ -4,6 +4,7 @@ from collections import namedtuple
 import requests
 import xbmc
 import xbmcaddon
+import xbmcgui
 
 VideoListItem = namedtuple("VideoSearchResult",
     [
@@ -53,11 +54,20 @@ class InvidiousAPIClient:
         end = time.time()
         xbmc.log(f"invidious ========== request finished in {end - start}s ==========", xbmc.LOGDEBUG)
 
-        response.raise_for_status()
+        if response.status_code > 300:
+            xbmc.log(f'invidious API request failed with HTTP status {response.status_code}: {response.reason}.', xbmc.LOGWARNING)
+            dialog = xbmcgui.Dialog()
+            dialog.notification(
+                'API request failed',
+                f'HTTP request returned HTTP status {response.status_code}: {response.reason} error'
+            )
+            return None
 
         return response
 
     def parse_response(self, response):
+        if not response:
+            return
         data = response.json()
 
         # If a channel is opened, the videos are packaged in a dict
