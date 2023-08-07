@@ -141,14 +141,18 @@ class InvidiousPlugin:
             
             if is_helper.check_inputstream():
                 listitem = xbmcgui.ListItem(path=video_info["dashUrl"])
+                listitem.setInfo('video', {})
                 listitem.setProperty("inputstream", is_helper.inputstream_addon)
                 listitem.setProperty("inputstream.adaptive.manifest_type", "mpd")
 
-        # as a fallback, we use the first oldschool stream
+        # as a fallback, we use the last oldschool stream, as it is
+        # often the best.
         if listitem is None:
-            url = video_info["formatStreams"][0]["url"]
+            xbmc.log("invidious playback failling back to non-dash stream!", xbmc.LOGINFO)
+            url = video_info["formatStreams"][-1]["url"]
             # it's pretty complicated to play a video by its URL in Kodi...
             listitem = xbmcgui.ListItem(path=url)
+            listitem.setInfo('video', {})
 
         xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
 
