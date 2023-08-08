@@ -29,16 +29,16 @@ class InvidiousPlugin:
         instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
         if 'auto' == instance_url:
             instance_url = self.instance_autodetect()
-        xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
+        xbmc.log(f'invidous using instance {instance_url}.', xbmc.LOGINFO)
         self.api_client = invidious_api.InvidiousAPIClient(instance_url)
 
     def instance_autodetect(self):
-        xbmc.log('Picking Invidious instance automatically.', xbmc.LOGINFO)
+        xbmc.log('invidious picking instance automatically.', xbmc.LOGINFO)
         instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
         response = requests.get(instancesurl, timeout=5)
         data = response.json()
         for instanceinfo in data:
-            xbmc.log('Considering Invidious instance ' + str(instanceinfo), xbmc.LOGDEBUG)
+            xbmc.log('invidious considering instance ' + str(instanceinfo), xbmc.LOGDEBUG)
             instancename, instance = instanceinfo
             if 'https' == instance['type']:
                 instance_url = instance['uri']
@@ -48,7 +48,7 @@ class InvidiousPlugin:
                 if api_client.fetch_special_list(self.SPECIAL_LISTS[0]):
                     return instance_url
 
-        xbmc.log('No working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
+        xbmc.log('invidious no working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
         # FIXME figure out how to show failing autodetection to the user.
         dialog = xbmcgui.Dialog()
         dialog.notification(
@@ -136,27 +136,40 @@ class InvidiousPlugin:
         # TODO: add support for adaptive streaming
         video_info = self.api_client.fetch_video_information(id)
 
-        listitem = None
+        xbmc.log(f"invidious playing video {video_info}.", xbmc.LOGDEBUG)
 
+        listitem = None
         # check if playback via MPEG-DASH is possible
         if "dashUrl" in video_info:
             is_helper = inputstreamhelper.Helper("mpd")
             
             if is_helper.check_inputstream():
-                listitem = xbmcgui.ListItem(path=video_info["dashUrl"])
-                listitem.setInfo('video', {})
+                url = video_info["dashUrl"]
+                xbmc.log(f"invidious using mpeg-dash stream {url}.", xbmc.LOGDEBUG)
+                listitem = xbmcgui.ListItem(path=url)
                 listitem.setProperty("inputstream", is_helper.inputstream_addon)
                 listitem.setProperty("inputstream.adaptive.manifest_type", "mpd")
+            else:
+                xbmc.log("invidious mpeg-dash input helper not available.", xbmc.LOGDEBUG)
 
         # as a fallback, we use the last oldschool stream, as it is
-        # often the best.
+        # often the best quality.
         if listitem is None:
-            xbmc.log("invidious playback failling back to non-dash stream!", xbmc.LOGINFO)
             url = video_info["formatStreams"][-1]["url"]
+            xbmc.log("invidious playback failing back to non-dash stream {url}!", xbmc.LOGINFO)
             # it's pretty complicated to play a video by its URL in Kodi...
             listitem = xbmcgui.ListItem(path=url)
-            listitem.setInfo('video', {})
 
+        datestr = datetime.utcfromtimestamp(video_info["published"]).date().isoformat()
+        listitem.setInfo('video', {
+                "title": video_info["title"],
+                "mediatype": "video",
+                "plot": video_info["description"],
+                "credits": video_info["author"],
+                "date": datestr,
+                "dateadded": datestr,
+                "duration": str(video_info["lengthSeconds"])
+        })
         xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
 
     def display_main_menu(self):
@@ -182,12 +195,12 @@ class InvidiousPlugin:
         action = self.args.get("action", [None])[0]
 
         # debugging
-        xbmc.log("--------------------------------------------", xbmc.LOGDEBUG)
-        xbmc.log("base url:" + str(self.base_url), xbmc.LOGDEBUG)
-        xbmc.log("handle:" + str(self.addon_handle), xbmc.LOGDEBUG)
-        xbmc.log("args:" + str(self.args), xbmc.LOGDEBUG)
-        xbmc.log("action:" + str(action), xbmc.LOGDEBUG)
-        xbmc.log("--------------------------------------------", xbmc.LOGDEBUG)
+        xbmc.log("invidous --------------------------------------------", xbmc.LOGDEBUG)
+        xbmc.log("invidous base url:" + str(self.base_url), xbmc.LOGDEBUG)
+        xbmc.log("invidous handle:" + str(self.addon_handle), xbmc.LOGDEBUG)
+        xbmc.log("invidous args:" + str(self.args), xbmc.LOGDEBUG)
+        xbmc.log("invidous action:" + str(action), xbmc.LOGDEBUG)
+        xbmc.log("invidous --------------------------------------------", xbmc.LOGDEBUG)
 
         # for the sake of simplicity, we just handle HTTP request errors here centrally
         try:
@@ -211,7 +224,7 @@ class InvidiousPlugin:
                 raise RuntimeError("unknown action " + action)
 
         except requests.HTTPError as e:
-            xbmc.log(f'HTTP status {e.response.status_code} during action processing: {e.response.reason}', xbmc.LOGWARNING)
+            xbmc.log(f'invidous HTTP status {e.response.status_code} during action processing: {e.response.reason}', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30003),
@@ -220,7 +233,7 @@ class InvidiousPlugin:
             )
 
         except requests.Timeout:
-            xbmc.log('HTTP timed out during action processing', xbmc.LOGWARNING)
+            xbmc.log('invidous HTTP timed out during action processing', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30005),
