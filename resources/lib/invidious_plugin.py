@@ -111,7 +111,7 @@ class InvidiousPlugin:
 
         if len(search_input) == 0:
             return
-
+        xbmc.log(f"invidious searching for {search_input}.", xbmc.LOGDEBUG)
         # search for the terms on Invidious
         results = self.api_client.search(search_input)
 
@@ -211,6 +211,7 @@ class InvidiousPlugin:
                 raise RuntimeError("unknown action " + action)
 
         except requests.HTTPError as e:
+            xbmc.log(f'HTTP status {e.response.status_code} during action processing: {e.response.reason}', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30003),
@@ -219,6 +220,7 @@ class InvidiousPlugin:
             )
 
         except requests.Timeout:
+            xbmc.log('HTTP timed out during action processing', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30005),
