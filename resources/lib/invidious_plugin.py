@@ -28,32 +28,35 @@ class InvidiousPlugin:
 
         instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
         if 'auto' == instance_url:
-            xbmc.log('Picking Invidious instance automatically.', xbmc.LOGINFO)
-            instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
-            response = requests.get(instancesurl, timeout=5)
-            data = response.json()
-            for instanceinfo in data:
-                xbmc.log('Considering Invidious instance ' + str(instanceinfo), xbmc.LOGDEBUG)
-                instancename, instance = instanceinfo
-                if 'https' == instance['type']:
-                    prospective_url = instance['uri']
-                    # Make sure the instance work for us.  This avoid
-                    # those rejecting us with HTTP status 429.
-                    api_client = invidious_api.InvidiousAPIClient(prospective_url)
-                    if api_client.fetch_special_list(self.SPECIAL_LISTS[0]):
-                        instance_url = prospective_url
-                        xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
-                        break
-            if 'auto' == instance_url:
-                xbmc.log('No working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
-                dialog = xbmcgui.Dialog()
-                dialog.notification(
-                    'No working instance URL found',
-                    'No working https type instance returned from api.invidious.io.'
-                    "error"
-                )
-                raise ValueError("unable to find working instance")
+            instance_url = self.instance_autodetect()
+        xbmc.log(f'Using Invidious instance {instance_url}.', xbmc.LOGINFO)
         self.api_client = invidious_api.InvidiousAPIClient(instance_url)
+
+    def instance_autodetect(self):
+        xbmc.log('Picking Invidious instance automatically.', xbmc.LOGINFO)
+        instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
+        response = requests.get(instancesurl, timeout=5)
+        data = response.json()
+        for instanceinfo in data:
+            xbmc.log('Considering Invidious instance ' + str(instanceinfo), xbmc.LOGDEBUG)
+            instancename, instance = instanceinfo
+            if 'https' == instance['type']:
+                instance_url = instance['uri']
+                # Make sure the instance work for us.  This test avoid
+                # those rejecting us with HTTP status 429.
+                api_client = invidious_api.InvidiousAPIClient(instance_url)
+                if api_client.fetch_special_list(self.SPECIAL_LISTS[0]):
+                    return instance_url
+
+        xbmc.log('No working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
+        # FIXME figure out how to show failing autodetection to the user.
+        dialog = xbmcgui.Dialog()
+        dialog.notification(
+            'No working instance URL found',
+            'No working https type instance returned from api.invidious.io.'
+            "error"
+        )
+        raise ValueError("unable to find working instance")
 
     def build_url(self, action, **kwargs):
         if not action:
