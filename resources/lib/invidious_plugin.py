@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import json
 import requests
 import sys
 from urllib.parse import urlencode
@@ -10,10 +11,45 @@ import xbmc
 import xbmcgui
 import xbmcaddon
 import xbmcplugin
+import xbmcvfs
 
 import inputstreamhelper
 
 import invidious_api
+
+class SearchHistory():
+    """Keep fixed length list of search queries, with the latest search
+    query top."""
+
+    def __init__(self, history_path, depth=10):
+        self.history_path = history_path
+        self.depth = depth
+
+
+    def push(self, query):
+        if xbmcvfs.exists(self.history_path):
+            with open(self.history_path, "r") as file:
+                queries = json.load(file)
+        else:
+            queries = []
+
+        if query in queries:
+            # Remove existing entry to move it forward
+            queries.remove(query)
+
+        queries.insert(0, query)
+
+        queries = queries[:self.depth]
+
+        with open(self.history_path, "w+") as file:
+            json.dump(queries, file)
+
+
+    def queries(self):
+        if not xbmcvfs.exists(self.history_path):
+            return []
+        with open(self.history_path, "r") as file:
+            return json.load(file)
 
 
 class InvidiousPlugin:
@@ -26,6 +62,8 @@ class InvidiousPlugin:
         self.addon_handle = addon_handle
         self.addon = xbmcaddon.Addon()
         self.args = args
+        path = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+        self.search_history = SearchHistory(path + 'search-history.json', 20)
 
         instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
         if 'auto' == instance_url:
@@ -107,15 +145,22 @@ class InvidiousPlugin:
 
         self.end_of_directory()
 
-    def display_search(self):
-        # query search terms with a dialog
+    def display_new_search(self):
+        # query search with a dialog
         dialog = xbmcgui.Dialog()
         search_input = dialog.input(self.addon.getLocalizedString(30001), type=xbmcgui.INPUT_ALPHANUM)
 
+        self.display_search_result(search_input)
+
+    def display_search_result(self, search_input):
         if len(search_input) == 0:
             return
+
+        self.search_history.push(search_input)
+
         xbmc.log(f"invidious searching for {search_input}.", xbmc.LOGDEBUG)
-        # search for the terms on Invidious
+
+        # pass search query to Invidious
         results = self.api_client.search(search_input)
 
         # assemble menu with the results
@@ -181,11 +226,30 @@ class InvidiousPlugin:
             self.add_directory_item(url=self.build_url(path), listitem=listitem, isFolder=True)
 
         # video search item
-        add_list_item(self.addon.getLocalizedString(30002), "search_video")
+        add_list_item(self.addon.getLocalizedString(30001), "search_menu")
 
         for special_list_name in self.__class__.SPECIAL_LISTS:
             label = special_list_name[0].upper() + special_list_name[1:]
             add_list_item(label, special_list_name)
+
+        self.end_of_directory()
+
+    def display_search_submenu(self):
+        def add_list_item(label, path):
+            listitem = xbmcgui.ListItem(label, path=path, )
+            self.add_directory_item(url=self.build_url(path), listitem=listitem, isFolder=True)
+
+        # New search on top.
+        add_list_item(self.addon.getLocalizedString(30002), "new_search")
+
+        for query in self.search_history.queries():
+            url = self.build_url("search", q=query)
+            listitem = xbmcgui.ListItem(query, path=query, )
+            self.add_directory_item(
+                url=url,
+                listitem=listitem,
+                isFolder=True
+            )
 
         self.end_of_directory()
 
@@ -210,8 +274,14 @@ class InvidiousPlugin:
             if not action:
                 self.display_main_menu()
 
-            elif action == "search_video":
-                self.display_search()
+            elif action == "search_menu":
+                self.display_search_submenu()
+
+            elif action == "new_search":
+                self.display_new_search()
+
+            elif action == "search":
+                self.display_search_result(self.args["q"][0])
 
             elif action == "play_video":
                 self.play_video(self.args["video_id"][0])

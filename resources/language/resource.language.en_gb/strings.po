@@ -25,7 +25,7 @@ msgid "Search"
 msgstr ""
 
 msgctxt "#30002"
-msgid "Search video titles"
+msgid "New search"
 msgstr ""
 
 msgctxt "#30003"
