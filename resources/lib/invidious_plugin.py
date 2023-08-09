@@ -20,6 +20,7 @@ class InvidiousPlugin:
     # special lists provided by the Invidious API
     SPECIAL_LISTS = ("trending", "popular")
 
+    INSTANCESURL = "https://api.invidious.io/instances.json?sort_by=type,health"
     def __init__(self, base_url, addon_handle, args):
         self.base_url = base_url
         self.addon_handle = addon_handle
@@ -34,8 +35,8 @@ class InvidiousPlugin:
 
     def instance_autodetect(self):
         xbmc.log('invidious picking instance automatically.', xbmc.LOGINFO)
-        instancesurl = "https://api.invidious.io/instances.json?sort_by=type,health"
-        response = requests.get(instancesurl, timeout=5)
+
+        response = requests.get(self.INSTANCESURL, timeout=5)
         data = response.json()
         for instanceinfo in data:
             xbmc.log('invidious considering instance ' + str(instanceinfo), xbmc.LOGDEBUG)
@@ -56,7 +57,7 @@ class InvidiousPlugin:
             'No working https type instance returned from api.invidious.io.'
             "error"
         )
-        raise ValueError("unable to find working instance")
+        raise ValueError("unable to find working Invidious instance")
 
     def build_url(self, action, **kwargs):
         if not action:
