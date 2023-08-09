@@ -7,6 +7,7 @@ import xbmcaddon
 
 VideoListItem = namedtuple("VideoSearchResult",
     [
+        "type",
         "id",
         "thumbnail_url",
         "heading",
@@ -17,6 +18,18 @@ VideoListItem = namedtuple("VideoSearchResult",
         "duration",
     ]
 )
+
+ChannelListItem = namedtuple("ChannelSearchResult",
+    [
+        "type",
+        "id",
+        "thumbnail_url",
+        "heading",
+        "description",
+        "verified",
+        "sub_count",
+     ]
+ )
 
 
 class InvidiousAPIClient:
@@ -46,31 +59,61 @@ class InvidiousAPIClient:
 
     def parse_response(self, response):
         data = response.json()
+
+        # If a channel is opened, the videos are packaged in a dict
+        # entry "videos".
+        if "videos" in data:
+            data = data["videos"]
+
         for item in data:
-            if item["type"] not in ["video", "shortVideo"] or not item["lengthSeconds"] > 0:
+            if item["type"] in ["video", "shortVideo"]:
+                # Skip videos with no or negative duration.
+                if not item["lengthSeconds"] > 0:
+                    continue
+                for thumb in item["videoThumbnails"]:
+
+                    # high appears to be ~480x360, which is a
+                    # reasonable trade-off works well on 1080p.
+                    if thumb["quality"] == "high":
+                        thumbnail_url = thumb["url"]
+                        break
+
+                # as a fallback, we just use the last one in the list
+                # (which is usually the lowest quality).
+                else:
+                    thumbnail_url = item["videoThumbnails"][-1]["url"]
+
+                yield VideoListItem(
+                    "video",
+                    item["videoId"],
+                    thumbnail_url,
+                    item["title"],
+                    item["author"],
+                    item.get("description", self.addon.getLocalizedString(30000)),
+                    item["viewCount"],
+                    item["published"],
+                    item["lengthSeconds"]
+                )
+            elif item["type"] == "channel":
+                # Grab the highest resolution avatar image
+                # Usually isn't more than 512x512
+                thumbnail = sorted(item["authorThumbnails"], key=lambda thumb: thumb["height"], reverse=True)[0]
+
+                yield ChannelListItem(
+                    "channel",
+                    item["authorId"],
+                    "https:" + thumbnail["url"],
+                    item["author"],
+                    item["description"],
+                    item["authorVerified"],
+                    item["subCount"],
+                )
+            elif item["type"] == 'playlist': # Ignored for now
+                xbmc.log("invidious skipping playlist from search result!", xbmc.LOGINFO)
+                xbmc.log(f"invidious playlist entry: {item}", xbmc.LOGDEBUG)
                 continue
-            for thumb in item["videoThumbnails"]:
-
-                # high appears to be ~480x360, which is a reasonable trade-off
-                # works well on 1080p
-                if thumb["quality"] == "high":
-                    thumbnail_url = thumb["url"]
-                    break
-
-            # as a fallback, we just use the last one in the list (which is usually the lowest quality)
             else:
-                thumbnail_url = item["videoThumbnails"][-1]["url"]
-
-            yield VideoListItem(
-                item["videoId"],
-                thumbnail_url,
-                item["title"],
-                item["author"],
-                item.get("description", self.addon.getLocalizedString(30000)),
-                item["viewCount"],
-                item["published"],
-                item["lengthSeconds"]
-            )
+                xbmc.log(f'invidious received search result item with unknown response type {item["type"]}.', xbmc.LOGWARNING)
 
     def search(self, *terms):
         params = {

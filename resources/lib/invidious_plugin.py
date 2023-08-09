@@ -114,24 +114,14 @@ class InvidiousPlugin:
         xbmcplugin.endOfDirectory(self.addon_handle)
 
     def display_search_results(self, results):
-        # extracted from display_search
+        # FIXME Add pagination support?
         for result in results:
-            list_item = xbmcgui.ListItem(result.heading)
+            if result.type not in ['video', 'channel']:
+                raise RuntimeError("unknown result type " + result.type)
 
+            list_item = xbmcgui.ListItem(result.heading)
             list_item.setArt({
                 "thumb": result.thumbnail_url,
-            })
-
-            datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
-
-            list_item.setInfo("video", {
-                "title": result.heading,
-                "mediatype": "video",
-                "plot": result.description,
-                "credits": result.author,
-                "date": datestr,
-                "dateadded": datestr,
-                "duration": result.duration
             })
 
             # if this is NOT set, the plugin is called with an invalid handle when trying to play this item
@@ -139,9 +129,24 @@ class InvidiousPlugin:
             # https://forum.kodi.tv/showthread.php?tid=173986&pid=1519987#pid1519987
             list_item.setProperty("IsPlayable", "true")
 
-            url = self.build_url("play_video", video_id=result.id)
+            if 'video' == result.type:
+                datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
 
-            self.add_directory_item(url=url, listitem=list_item)
+                list_item.setInfo("video", {
+                    "title": result.heading,
+                    "mediatype": "video",
+                    "plot": result.description,
+                    "credits": result.author,
+                    "date": datestr,
+                    "dateadded": datestr,
+                    "duration": result.duration
+                })
+
+                url = self.build_url("play_video", video_id=result.id)
+                self.add_directory_item(url=url, listitem=list_item)
+            elif 'channel' == result.type:
+                url = self.build_url("view_channel", channel_id=result.id)
+                self.add_directory_item(url=url, listitem=list_item, isFolder=True)
 
         self.end_of_directory()
 
@@ -175,7 +180,6 @@ class InvidiousPlugin:
         self.display_search_results(videos)
 
     def display_channel_list(self, channel_id):
-        # TODO: pagination
         videos = self.api_client.fetch_channel_list(channel_id)
 
         self.display_search_results(videos)
