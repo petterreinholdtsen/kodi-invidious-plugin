@@ -32,7 +32,9 @@ class InvidiousPlugin:
             instance_url = self.instance_autodetect()
         xbmc.log(f'invidous using instance {instance_url}.', xbmc.LOGINFO)
         self.api_client = invidious_api.InvidiousAPIClient(instance_url)
-
+        self.disable_dash = \
+            ("true" == xbmcplugin.getSetting(self.addon_handle,
+                                             "disable_dash"))
     def instance_autodetect(self):
         xbmc.log('invidious picking instance automatically.', xbmc.LOGINFO)
 
@@ -141,7 +143,7 @@ class InvidiousPlugin:
 
         listitem = None
         # check if playback via MPEG-DASH is possible
-        if "dashUrl" in video_info:
+        if not self.disable_dash and "dashUrl" in video_info:
             is_helper = inputstreamhelper.Helper("mpd")
             
             if is_helper.check_inputstream():
