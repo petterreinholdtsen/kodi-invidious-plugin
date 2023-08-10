@@ -30,7 +30,20 @@ ChannelListItem = namedtuple("ChannelSearchResult",
         "verified",
         "sub_count",
      ]
- )
+)
+
+PlaylistListItem = namedtuple("PlaylistSearchResult",
+    [
+        "type",
+        "id",
+        "thumbnail_url",
+        "heading",
+        "channel",
+        "channel_id",
+        "verified",
+        "video_count",
+    ]
+)
 
 
 class InvidiousAPIClient:
@@ -70,13 +83,14 @@ class InvidiousAPIClient:
             return
         data = response.json()
 
-        # If a channel is opened, the videos are packaged in a dict
-        # entry "videos".
+        # If a channel or playlist is opened, the videos are packaged
+        # in a dict entry "videos".
         if "videos" in data:
             data = data["videos"]
 
         for item in data:
-            if item["type"] in ["video", "shortVideo"]:
+            # Playlist videos do not have the 'type' attribute
+            if not "type" in item or item["type"] in ["video", "shortVideo"]:
                 # Skip videos with no or negative duration.
                 if not item["lengthSeconds"] > 0:
                     continue
@@ -100,9 +114,9 @@ class InvidiousAPIClient:
                     item["title"],
                     item["author"],
                     item.get("description", self.addon.getLocalizedString(30000)),
-                    item["viewCount"],
-                    item["published"],
-                    item["lengthSeconds"]
+                    item.get("viewCount", -1), # Missing for playlists.
+                    item.get("published", 0), # Missing for playlists.
+                    item["lengthSeconds"],
                 )
             elif item["type"] == "channel":
                 # Grab the highest resolution avatar image
@@ -118,10 +132,17 @@ class InvidiousAPIClient:
                     item["authorVerified"],
                     item["subCount"],
                 )
-            elif item["type"] == 'playlist': # Ignored for now
-                xbmc.log("invidious skipping playlist from search result!", xbmc.LOGINFO)
-                xbmc.log(f"invidious playlist entry: {item}", xbmc.LOGDEBUG)
-                continue
+            elif item["type"] == 'playlist':
+                yield PlaylistListItem(
+                    "playlist",
+                    item["playlistId"],
+                    item["playlistThumbnail"],
+                    item["title"],
+                    item["author"],
+                    item["authorId"],
+                    item["authorVerified"],
+                    item["videoCount"],
+                )
             else:
                 xbmc.log(f'invidious received search result item with unknown response type {item["type"]}.', xbmc.LOGWARNING)
 
@@ -144,6 +165,11 @@ class InvidiousAPIClient:
 
     def fetch_channel_list(self, channel_id):
         response = self.make_get_request(f"channels/videos/{channel_id}")
+
+        return self.parse_response(response)
+
+    def fetch_playlist_list(self, playlist_id):
+        response = self.make_get_request(f"playlists/{playlist_id}")
 
         return self.parse_response(response)
 

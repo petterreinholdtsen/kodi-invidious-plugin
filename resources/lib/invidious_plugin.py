@@ -116,7 +116,7 @@ class InvidiousPlugin:
     def display_search_results(self, results):
         # FIXME Add pagination support?
         for result in results:
-            if result.type not in ['video', 'channel']:
+            if result.type not in ['video', 'channel', 'playlist']:
                 raise RuntimeError("unknown result type " + result.type)
 
             list_item = xbmcgui.ListItem(result.heading)
@@ -146,6 +146,9 @@ class InvidiousPlugin:
                 self.add_directory_item(url=url, listitem=list_item)
             elif 'channel' == result.type:
                 url = self.build_url("view_channel", channel_id=result.id)
+                self.add_directory_item(url=url, listitem=list_item, isFolder=True)
+            elif 'playlist' == result.type:
+                url = self.build_url("view_playlist", playlist_id=result.id)
                 self.add_directory_item(url=url, listitem=list_item, isFolder=True)
 
         self.end_of_directory()
@@ -181,6 +184,11 @@ class InvidiousPlugin:
 
     def display_channel_list(self, channel_id):
         videos = self.api_client.fetch_channel_list(channel_id)
+
+        self.display_search_results(videos)
+
+    def display_playlist_list(self, playlist_id):
+        videos = self.api_client.fetch_playlist_list(playlist_id)
 
         self.display_search_results(videos)
 
@@ -292,6 +300,9 @@ class InvidiousPlugin:
 
             elif action == "view_channel":
                 self.display_channel_list(self.args["channel_id"][0])
+
+            elif action == "view_playlist":
+                self.display_playlist_list(self.args["playlist_id"][0])
 
             elif action in self.__class__.SPECIAL_LISTS:
                 special_list_name = action
