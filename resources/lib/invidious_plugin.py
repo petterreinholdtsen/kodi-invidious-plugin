@@ -73,25 +73,25 @@ class InvidiousPlugin:
     def end_of_directory(self):
         xbmcplugin.endOfDirectory(self.addon_handle)
 
-    def display_list_of_videos(self, videos):
+    def display_search_results(self, results):
         # extracted from display_search
-        for video in videos:
-            list_item = xbmcgui.ListItem(video.title)
+        for result in results:
+            list_item = xbmcgui.ListItem(result.heading)
 
             list_item.setArt({
-                "thumb": video.thumbnail_url,
+                "thumb": result.thumbnail_url,
             })
 
-            datestr = datetime.utcfromtimestamp(video.published).date().isoformat()
+            datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
 
             list_item.setInfo("video", {
-                "title": video.title,
+                "title": result.heading,
                 "mediatype": "video",
-                "plot": video.description,
-                "credits": video.author,
+                "plot": result.description,
+                "credits": result.author,
                 "date": datestr,
                 "dateadded": datestr,
-                "duration": video.duration
+                "duration": result.duration
             })
 
             # if this is NOT set, the plugin is called with an invalid handle when trying to play this item
@@ -99,7 +99,7 @@ class InvidiousPlugin:
             # https://forum.kodi.tv/showthread.php?tid=173986&pid=1519987#pid1519987
             list_item.setProperty("IsPlayable", "true")
 
-            url = self.build_url("play_video", video_id=video.video_id)
+            url = self.build_url("play_video", video_id=result.id)
 
             self.add_directory_item(url=url, listitem=list_item)
 
@@ -117,7 +117,7 @@ class InvidiousPlugin:
         results = self.api_client.search(search_input)
 
         # assemble menu with the results
-        self.display_list_of_videos(results)
+        self.display_search_results(results)
 
     def display_special_list(self, special_list_name):
         if special_list_name not in self.__class__.SPECIAL_LISTS:
@@ -125,13 +125,13 @@ class InvidiousPlugin:
 
         videos = self.api_client.fetch_special_list(special_list_name)
 
-        self.display_list_of_videos(videos)
+        self.display_search_results(videos)
 
     def display_channel_list(self, channel_id):
         # TODO: pagination
         videos = self.api_client.fetch_channel_list(channel_id)
 
-        self.display_list_of_videos(videos)
+        self.display_search_results(videos)
 
     def play_video(self, id):
         # TODO: add support for adaptive streaming

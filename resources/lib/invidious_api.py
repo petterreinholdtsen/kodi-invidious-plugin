@@ -5,13 +5,13 @@ import requests
 import xbmc
 import xbmcaddon
 
-VideoListItem = namedtuple("SearchResult",
+VideoListItem = namedtuple("VideoSearchResult",
     [
-        "video_id",
-        "title",
+        "id",
+        "thumbnail_url",
+        "heading",
         "author",
         "description",
-        "thumbnail_url",
         "view_count",
         "published",
         "duration",
@@ -44,12 +44,12 @@ class InvidiousAPIClient:
 
         return response
 
-    def parse_video_list_response(self, response):
+    def parse_response(self, response):
         data = response.json()
-        for video in data:
-            if video["type"] not in ["video", "shortVideo"] or not video["lengthSeconds"] > 0:
+        for item in data:
+            if item["type"] not in ["video", "shortVideo"] or not item["lengthSeconds"] > 0:
                 continue
-            for thumb in video["videoThumbnails"]:
+            for thumb in item["videoThumbnails"]:
 
                 # high appears to be ~480x360, which is a reasonable trade-off
                 # works well on 1080p
@@ -59,17 +59,17 @@ class InvidiousAPIClient:
 
             # as a fallback, we just use the last one in the list (which is usually the lowest quality)
             else:
-                thumbnail_url = video["videoThumbnails"][-1]["url"]
+                thumbnail_url = item["videoThumbnails"][-1]["url"]
 
             yield VideoListItem(
-                video["videoId"],
-                video["title"],
-                video["author"],
-                video.get("description", self.addon.getLocalizedString(30000)),
+                item["videoId"],
                 thumbnail_url,
-                video["viewCount"],
-                video["published"],
-                video["lengthSeconds"]
+                item["title"],
+                item["author"],
+                item.get("description", self.addon.getLocalizedString(30000)),
+                item["viewCount"],
+                item["published"],
+                item["lengthSeconds"]
             )
 
     def search(self, *terms):
@@ -80,7 +80,7 @@ class InvidiousAPIClient:
 
         response = self.make_get_request("search", **params)
 
-        return self.parse_video_list_response(response)
+        return self.parse_response(response)
 
     def fetch_video_information(self, video_id):
         response = self.make_get_request("videos/", video_id)
@@ -90,11 +90,11 @@ class InvidiousAPIClient:
         return data
 
     def fetch_channel_list(self, channel_id):
-        response = self.make_get_request("channels/videos/", channel_id)
+        response = self.make_get_request(f"channels/videos/{channel_id}")
 
-        return self.parse_video_list_response(response)
+        return self.parse_response(response)
 
     def fetch_special_list(self, special_list_name):
         response = self.make_get_request(special_list_name)
 
-        return self.parse_video_list_response(response)
+        return self.parse_response(response)
