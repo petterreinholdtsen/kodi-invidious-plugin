@@ -204,7 +204,7 @@ class InvidiousPlugin:
         # often the best quality.
         if listitem is None:
             url = video_info["formatStreams"][-1]["url"]
-            xbmc.log("invidious playback failing back to non-dash stream {url}!", xbmc.LOGINFO)
+            xbmc.log(f"invidious playback failing back to non-dash stream {url}!", xbmc.LOGINFO)
             # it's pretty complicated to play a video by its URL in Kodi...
             listitem = xbmcgui.ListItem(path=url)
 
