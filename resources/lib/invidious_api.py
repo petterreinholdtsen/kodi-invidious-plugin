@@ -68,11 +68,11 @@ class InvidiousAPIClient:
         xbmc.log(f"invidious ========== request finished in {end - start}s ==========", xbmc.LOGDEBUG)
 
         if response.status_code > 300:
-            xbmc.log(f'invidious API request failed with HTTP status {response.status_code}: {response.reason}.', xbmc.LOGWARNING)
+            xbmc.log(f'invidious API request {assembled_url} with {params} failed with HTTP status {response.status_code}: {response.reason}.', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 'API request failed',
-                f'HTTP request returned HTTP status {response.status_code}: {response.reason} error'
+                f'HTTP request {assembled_url} with {params} returned HTTP status {response.status_code}: {response.reason} error'
             )
             return None
 
