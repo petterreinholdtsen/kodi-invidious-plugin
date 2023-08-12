@@ -139,6 +139,7 @@ class InvidiousPlugin:
                     "credits": result.author,
                     "date": datestr,
                     "dateadded": datestr,
+                    "premiered": datestr,
                     "duration": result.duration
                 })
 
@@ -228,6 +229,7 @@ class InvidiousPlugin:
                 "credits": video_info["author"],
                 "date": datestr,
                 "dateadded": datestr,
+                "premiered": datestr,
                 "duration": str(video_info["lengthSeconds"])
         })
         xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
