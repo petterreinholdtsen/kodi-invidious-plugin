@@ -55,3 +55,7 @@ msgstr ""
 msgctxt "#30009"
 msgid "Disable Dynamic Adaptive Streaming over HTTP (MPEG-DASH)"
 msgstr ""
+
+msgctxt "#30010"
+msgid "Automatically pick instance URL"
+msgstr ""

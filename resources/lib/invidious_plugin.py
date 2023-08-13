@@ -65,14 +65,14 @@ class InvidiousPlugin:
         path = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
         self.search_history = SearchHistory(path + 'search-history.json', 20)
 
-        instance_url = xbmcplugin.getSetting(self.addon_handle, "instance_url")
-        if 'auto' == instance_url:
+        if "true" == self.addon.getSetting("auto_instance"):
             instance_url = self.instance_autodetect()
+            self.addon.setSetting("instance_url", instance_url)
+        instance_url = self.addon.getSetting("instance_url")
         xbmc.log(f'invidous using instance {instance_url}.', xbmc.LOGINFO)
         self.api_client = invidious_api.InvidiousAPIClient(instance_url)
         self.disable_dash = \
-            ("true" == xbmcplugin.getSetting(self.addon_handle,
-                                             "disable_dash"))
+            ("true" == self.addon.getSetting("disable_dash"))
     def instance_autodetect(self):
         xbmc.log('invidious picking instance automatically.', xbmc.LOGINFO)
 
