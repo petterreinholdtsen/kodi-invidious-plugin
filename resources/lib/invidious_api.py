@@ -71,8 +71,9 @@ class InvidiousAPIClient:
             xbmc.log(f'invidious API request {assembled_url} with {params} failed with HTTP status {response.status_code}: {response.reason}.', xbmc.LOGWARNING)
             dialog = xbmcgui.Dialog()
             dialog.notification(
-                'API request failed',
-                f'HTTP request {assembled_url} with {params} returned HTTP status {response.status_code}: {response.reason} error'
+                self.addon.getLocalizedString(30011),
+                f'HTTP request {assembled_url} with {params} returned HTTP status {response.status_code}: {response.reason} error',
+                "error"
             )
             return None
 

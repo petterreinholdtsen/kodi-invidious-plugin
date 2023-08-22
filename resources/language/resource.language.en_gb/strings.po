@@ -59,3 +59,15 @@ msgstr ""
 msgctxt "#30010"
 msgid "Automatically pick instance URL"
 msgstr ""
+
+msgctxt "#30011"
+msgid "API request failed"
+msgstr ""
+
+msgctxt "#30012"
+msgid "No working instance URL found"
+msgstr ""
+
+msgctxt "#30013"
+msgid "No working https type instance returned from api.invidious.io."
+msgstr ""

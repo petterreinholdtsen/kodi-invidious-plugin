@@ -93,9 +93,9 @@ class InvidiousPlugin:
         # FIXME figure out how to show failing autodetection to the user.
         dialog = xbmcgui.Dialog()
         dialog.notification(
-            'No working instance URL found',
-            'No working https type instance returned from api.invidious.io.'
-            "error"
+            self.addon.getLocalizedString(30012),
+            self.addon.getLocalizedString(30013),
+            "error",
         )
         raise ValueError("unable to find working Invidious instance")
 
