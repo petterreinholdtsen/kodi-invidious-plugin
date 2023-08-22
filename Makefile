@@ -22,6 +22,8 @@ prepare_release:
 	rm -rf $(REPO_PLUGINS)/$(ADDON_NAME)
 	mkdir $(REPO_PLUGINS)/$(ADDON_NAME)
 	cp -r $(FILES) $(REPO_PLUGINS)/$(ADDON_NAME)/
+# Remove files unwanted in repo edition
+	$(RM) $(REPO_PLUGINS)/$(ADDON_NAME)/resources/language/Makefile
 
 clean:
 	rm *.zip
