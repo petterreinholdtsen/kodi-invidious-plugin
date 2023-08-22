@@ -15,9 +15,9 @@
 
     <extension point="xbmc.python.module" library="resources/lib/"/>
     <extension point="xbmc.addon.metadata">
-        <summary lang="en">Invidious client</summary>
-        <description lang="en">A privacy-friendly way of watching YouTube content. Uses the great Invidious web service's API to do the heavy lifting.</description>
-        <disclaimer lang="en">This plugin is not endorsed by Google</disclaimer>
+        <summary lang="en_GB">Invidious client</summary>
+        <description lang="en_GB">A privacy-friendly way of watching YouTube content. Uses the great Invidious web service's API to do the heavy lifting.</description>
+        <disclaimer lang="en_GB">This plugin is not endorsed by Google</disclaimer>
         <summary lang="nb">Invidious-klient</summary>
         <description lang="nb">En personvernvennlig måte å se YouTube-innhold på. Bruker den flotte Invidious-netttjenestens API for å gjøre det tunge arbeidet.</description>
         <disclaimer lang="nb">Denne plugin-modulen er ikke godkjent av Google.</disclaimer>
