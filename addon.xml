@@ -27,6 +27,7 @@
         <source>https://github.com/petterreinholdtsen/kodi-invidious-plugin</source>
         <assets>
             <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.png</fanart>
         </assets>
     </extension>
 </addon>
