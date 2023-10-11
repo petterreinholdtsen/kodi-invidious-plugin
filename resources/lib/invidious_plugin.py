@@ -235,7 +235,12 @@ class InvidiousPlugin:
                 "premiered": datestr,
                 "duration": str(video_info["lengthSeconds"])
         })
-        xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
+        # basilgello: calling 'RunPlugin' via kodi-send results in CScriptRunner::ExecuteScript
+        # which in turn sets add9n_handle to -1 breaking the playback 
+        if self.addon_handle > -1:
+            xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
+        else:
+            xbmc.Player().play(url, listitem)
 
     def display_main_menu(self):
         def add_list_item(label, path):
