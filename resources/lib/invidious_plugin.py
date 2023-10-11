@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import json
+import os
 import requests
 import sys
 from urllib.parse import urlencode
@@ -25,6 +26,11 @@ class SearchHistory():
     def __init__(self, history_path, depth=10):
         self.history_path = history_path
         self.depth = depth
+
+        d = os.path.dirname(history_path)
+        if not os.path.exists(d):
+            xbmc.log(f'invidous created state directory {d}.', xbmc.LOGDEBUG)
+            os.mkdir(d)
 
 
     def push(self, query):
