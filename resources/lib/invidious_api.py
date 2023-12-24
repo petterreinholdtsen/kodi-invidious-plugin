@@ -87,7 +87,7 @@ class InvidiousAPIClient:
 
     def parse_response(self, response):
         if not response:
-            return
+            return None
         data = response.json()
 
         # If a channel or playlist is opened, the videos are packaged
@@ -165,10 +165,9 @@ class InvidiousAPIClient:
 
     def fetch_video_information(self, video_id):
         response = self.make_get_request("videos/", video_id)
-
-        data = response.json()
-
-        return data
+        if not response:
+            return None
+        return response.json()
 
     def fetch_channel_list(self, channel_id):
         response = self.make_get_request(f"channels/videos/{channel_id}")
