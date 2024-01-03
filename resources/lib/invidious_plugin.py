@@ -98,7 +98,6 @@ class InvidiousPlugin:
                 # working instances.
                 test_video_id = '1l2_uCyBXQ0'
                 api_client = invidious_api.InvidiousAPIClient(instance_url)
-                try:
                 if api_client.fetch_video_information(test_video_id):
                     return instance_url
                 else:
