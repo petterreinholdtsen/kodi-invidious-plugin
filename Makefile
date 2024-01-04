@@ -24,6 +24,7 @@ prepare_release:
 	cp -r $(FILES) $(REPO_PLUGINS)/$(ADDON_NAME)/
 # Remove files unwanted in repo edition
 	$(RM) $(REPO_PLUGINS)/$(ADDON_NAME)/resources/language/Makefile
+	$(RM) $(REPO_PLUGINS)/$(ADDON_NAME)/resources/fanart.svg
 
 clean:
 	rm *.zip
