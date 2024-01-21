@@ -62,6 +62,7 @@ class SearchHistory():
 class InvidiousPlugin:
     # special lists provided by the Invidious API
     SPECIAL_LISTS = ("trending", "popular")
+    FOLLOWING_FILENAME = "following.json"
 
     INSTANCESURL = "https://api.invidious.io/instances.json?sort_by=type,health"
     def __init__(self, base_url, addon_handle, args):
@@ -71,6 +72,7 @@ class InvidiousPlugin:
         self.args = args
         path = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
         self.search_history = SearchHistory(path + 'search-history.json', 20)
+        self.following_path = path + self.FOLLOWING_FILENAME
 
         if "true" == self.addon.getSetting("auto_instance"):
             instance_url = self.instance_autodetect()
@@ -162,6 +164,13 @@ class InvidiousPlugin:
                 self.add_directory_item(url=url, listitem=list_item)
             elif 'channel' == result.type:
                 url = self.build_url("view_channel", channel_id=result.id)
+                if not self.is_following(result.id):
+                    follow_url = self.build_url("follow", channel_id=result.id, name=result.heading, thumbnail_url=result.thumbnail_url)
+                    list_item.addContextMenuItems([('Follow', 'RunPlugin(' + follow_url + ')')])
+                else:
+                    unfollow_url = self.build_url("unfollow", channel_id=result.id)
+                    list_item.addContextMenuItems([('Unfollow', 'RunPlugin(' + unfollow_url + ')')])
+
                 self.add_directory_item(url=url, listitem=list_item, isFolder=True)
             elif 'playlist' == result.type:
                 url = self.build_url("view_playlist", playlist_id=result.id)
@@ -267,6 +276,78 @@ class InvidiousPlugin:
             label = special_list_name[0].upper() + special_list_name[1:]
             add_list_item(label, special_list_name)
 
+        add_list_item("Followed channels", "show_following")
+
+        self.end_of_directory()
+
+    def follow(self, channel_id, name, thumbnail_url):
+        if not xbmcvfs.exists(self.following_path):
+            open(self.following_path, "x") # FIXME Why this?
+            following = {}
+        else:
+            with open(self.following_path, "r") as file:
+                following = json.load(file)
+
+        following[channel_id] = { 'name': name, 'thumbnail': thumbnail_url }
+        with open(self.following_path, "w+") as file:
+            json.dump(following, file)
+
+        dialog = xbmcgui.Dialog()
+        dialog.notification(
+            "Updated following status",
+            "Now following channel " + name + "."
+        )
+
+    def is_following(self, channel_id):
+        if not xbmcvfs.exists(self.following_path):
+            return False
+        with open(self.following_path, "r") as file:
+            following = json.load(file)
+        return channel_id in following
+
+    def unfollow(self, channel_id):
+        with open(self.following_path, "r") as file:
+            following = json.load(file)
+
+        dialog = xbmcgui.Dialog()
+        if channel_id in following:
+            del following[channel_id]
+            with open(self.following_path, "w+") as file:
+                json.dump(following, file)
+            dialog.notification(
+                "Updated following status",
+                "No longer following this channel.",
+            )
+        else:
+            dialog.notification(
+                "Updated following status",
+                "You have already unfollowed this channel.",
+                "error"
+            )
+
+
+    def display_following(self):
+        if not xbmcvfs.exists(self.following_path):
+            self.end_of_directory()
+            return
+
+        with open(self.following_path, "r") as file:
+            following = json.load(file)
+
+        for channel_id in following:
+            channel = following[channel_id]
+            list_item = xbmcgui.ListItem(channel["name"])
+            list_item.setArt({
+                "thumb": channel["thumbnail"]
+            })
+
+            list_item.setProperty("IsPlayable", "true")
+
+            url = self.build_url("view_channel", channel_id=channel_id)
+
+            list_item.addContextMenuItems([('Unfollow', 'RunPlugin(' + self.build_url("unfollow", channel_id=channel_id) + ')')])
+
+            self.add_directory_item(url=url, listitem=list_item, isFolder=True)
         self.end_of_directory()
 
     def display_search_submenu(self):
@@ -326,6 +407,14 @@ class InvidiousPlugin:
 
             elif action == "view_playlist":
                 self.display_playlist_list(self.args["playlist_id"][0])
+            elif action == "follow":
+                self.follow(self.args["channel_id"][0], self.args["name"][0], self.args["thumbnail_url"][0])
+
+            elif action == "unfollow":
+                self.unfollow(self.args["channel_id"][0])
+
+            elif action == "show_following":
+                self.display_following()
 
             elif action in self.__class__.SPECIAL_LISTS:
                 special_list_name = action
