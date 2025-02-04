@@ -4,9 +4,9 @@ from collections import namedtuple
 import requests
 import xbmc
 import xbmcaddon
-import xbmcgui
 
-VideoListItem = namedtuple("VideoSearchResult",
+VideoListItem = namedtuple(
+    "VideoSearchResult",
     [
         "type",
         "id",
@@ -17,10 +17,11 @@ VideoListItem = namedtuple("VideoSearchResult",
         "view_count",
         "published",
         "duration",
-    ]
+    ],
 )
 
-ChannelListItem = namedtuple("ChannelSearchResult",
+ChannelListItem = namedtuple(
+    "ChannelSearchResult",
     [
         "type",
         "id",
@@ -29,10 +30,11 @@ ChannelListItem = namedtuple("ChannelSearchResult",
         "description",
         "verified",
         "sub_count",
-     ]
+    ],
 )
 
-PlaylistListItem = namedtuple("PlaylistSearchResult",
+PlaylistListItem = namedtuple(
+    "PlaylistSearchResult",
     [
         "type",
         "id",
@@ -42,16 +44,16 @@ PlaylistListItem = namedtuple("PlaylistSearchResult",
         "channel_id",
         "verified",
         "video_count",
-    ]
+    ],
 )
 
 
 class InvidiousAPIClient:
-    def __init__(self, instance_url):
+    def __init__(self, instance_url: str):
         self.instance_url = instance_url.rstrip("/")
         self.addon = xbmcaddon.Addon()
 
-    def make_get_request(self, *path, **params):
+    def make_get_request(self, *path: tuple[str], **params: dict[str, str]):
         base_url = self.instance_url + "/api/v1/"
 
         url_path = "/".join(path)
@@ -61,20 +63,29 @@ class InvidiousAPIClient:
 
         assembled_url = base_url + url_path
 
-        xbmc.log(f"invidious ========== request {assembled_url} with {params} started ==========", xbmc.LOGDEBUG)
+        xbmc.log(
+            f"invidious ========== request {assembled_url} with {params} started ==========",
+            xbmc.LOGDEBUG,
+        )
         start = time.time()
         response = requests.get(assembled_url, params=params, timeout=5)
         end = time.time()
-        xbmc.log(f"invidious ========== request finished in {end - start}s ==========", xbmc.LOGDEBUG)
+        xbmc.log(
+            f"invidious ========== request finished in {end - start}s ==========",
+            xbmc.LOGDEBUG,
+        )
 
         if response.status_code > 300:
-            xbmc.log(f'invidious API request {assembled_url} with {params} failed with HTTP status {response.status_code}: {response.reason}.', xbmc.LOGWARNING)
+            xbmc.log(
+                f"invidious API request {assembled_url} with {params} failed with HTTP status {response.status_code}: {response.reason}.",
+                xbmc.LOGWARNING,
+            )
             return None
 
         return response
 
-    def parse_response(self, response):
-        if not response:
+    def parse_response(self, response: requests.models.Response):
+        if not response or not response.content:
             return None
         data = response.json()
 
@@ -85,7 +96,7 @@ class InvidiousAPIClient:
 
         for item in data:
             # Playlist videos do not have the 'type' attribute
-            if not "type" in item or item["type"] in ["video", "shortVideo"]:
+            if "type" not in item or item["type"] in ["video", "shortVideo"]:
                 # Skip videos with no or negative duration.
                 if not item["lengthSeconds"] > 0:
                     continue
@@ -109,14 +120,18 @@ class InvidiousAPIClient:
                     item["title"],
                     item["author"],
                     item.get("description", self.addon.getLocalizedString(30000)),
-                    item.get("viewCount", -1), # Missing for playlists.
-                    item.get("published", 0), # Missing for playlists.
+                    item.get("viewCount", -1),  # Missing for playlists.
+                    item.get("published", 0),  # Missing for playlists.
                     item["lengthSeconds"],
                 )
             elif item["type"] == "channel":
                 # Grab the highest resolution avatar image
                 # Usually isn't more than 512x512
-                thumbnail = sorted(item["authorThumbnails"], key=lambda thumb: thumb["height"], reverse=True)[0]
+                thumbnail = sorted(
+                    item["authorThumbnails"],
+                    key=lambda thumb: thumb["height"],
+                    reverse=True,
+                )[0]
 
                 yield ChannelListItem(
                     "channel",
@@ -127,7 +142,7 @@ class InvidiousAPIClient:
                     item["authorVerified"],
                     item["subCount"],
                 )
-            elif item["type"] == 'playlist':
+            elif item["type"] == "playlist":
                 yield PlaylistListItem(
                     "playlist",
                     item["playlistId"],
@@ -139,7 +154,10 @@ class InvidiousAPIClient:
                     item["videoCount"],
                 )
             else:
-                xbmc.log(f'invidious received search result item with unknown response type {item["type"]}.', xbmc.LOGWARNING)
+                xbmc.log(
+                    f'invidious received search result item with unknown response type {item["type"]}.',
+                    xbmc.LOGWARNING,
+                )
 
     def search(self, *terms):
         params = {
