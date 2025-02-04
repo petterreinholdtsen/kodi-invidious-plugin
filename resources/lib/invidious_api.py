@@ -158,7 +158,7 @@ class InvidiousAPIClient:
         return response.json()
 
     def fetch_channel_list(self, channel_id):
-        response = self.make_get_request(f"channels/videos/{channel_id}")
+        response = self.make_get_request(f"channels/{channel_id}/videos")
 
         return self.parse_response(response)
 
