@@ -85,7 +85,7 @@ class InvidiousPlugin:
                 "invidious considering instance " + str(instanceinfo), xbmc.LOGDEBUG
             )
             instancename, instance = instanceinfo
-            if 'https' == instance["type"] and False != instance["api"]:
+            if "https" == instance["type"] and False != instance["api"]:
                 instance_url = instance["uri"]
                 # Make sure the instance work for us.  This test avoid
                 # those rejecting us with HTTP status 429.  Some
