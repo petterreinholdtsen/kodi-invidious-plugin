@@ -1,37 +1,32 @@
-from datetime import datetime
-
 import json
 import os
-import requests
 import sys
-from urllib.parse import urlencode
-from urllib.parse import parse_qs
-
-import requests
-import xbmc
-import xbmcgui
-import xbmcaddon
-import xbmcplugin
-import xbmcvfs
+from datetime import datetime
+from urllib.parse import parse_qs, urlencode
 
 import inputstreamhelper
+import invidious_api
+import requests
+import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcplugin
+import xbmcvfs
 from infotagger.listitem import ListItemInfoTag
 
-import invidious_api
 
-class SearchHistory():
+class SearchHistory:
     """Keep fixed length list of search queries, with the latest search
     query top."""
 
-    def __init__(self, history_path, depth=10):
+    def __init__(self, history_path: str, depth: int = 10):
         self.history_path = history_path
         self.depth = depth
 
         d = os.path.dirname(history_path)
         if not os.path.exists(d):
-            xbmc.log(f'invidous created state directory {d}.', xbmc.LOGDEBUG)
+            xbmc.log(f"invidous created state directory {d}.", xbmc.LOGDEBUG)
             os.mkdir(d)
-
 
     def push(self, query):
         if xbmcvfs.exists(self.history_path):
@@ -46,11 +41,10 @@ class SearchHistory():
 
         queries.insert(0, query)
 
-        queries = queries[:self.depth]
+        queries = queries[: self.depth]
 
         with open(self.history_path, "w+") as file:
             json.dump(queries, file)
-
 
     def queries(self):
         if not xbmcvfs.exists(self.history_path):
@@ -64,46 +58,54 @@ class InvidiousPlugin:
     SPECIAL_LISTS = ("trending", "popular")
 
     INSTANCESURL = "https://api.invidious.io/instances.json?sort_by=type,health"
-    def __init__(self, base_url, addon_handle, args):
+
+    def __init__(self, base_url: str, addon_handle, args):
         self.base_url = base_url
         self.addon_handle = addon_handle
         self.addon = xbmcaddon.Addon()
         self.args = args
-        path = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
-        self.search_history = SearchHistory(path + 'search-history.json', 20)
+        path = xbmcvfs.translatePath(self.addon.getAddonInfo("profile"))
+        self.search_history = SearchHistory(path + "search-history.json", 20)
 
         if "true" == self.addon.getSetting("auto_instance"):
             instance_url = self.instance_autodetect()
             self.addon.setSetting("instance_url", instance_url)
         instance_url = self.addon.getSetting("instance_url")
-        xbmc.log(f'invidous using instance {instance_url}.', xbmc.LOGINFO)
+        xbmc.log(f"invidous using instance {instance_url}.", xbmc.LOGINFO)
         self.api_client = invidious_api.InvidiousAPIClient(instance_url)
-        self.disable_dash = \
-            ("true" == self.addon.getSetting("disable_dash"))
+        self.disable_dash = "true" == self.addon.getSetting("disable_dash")
+
     def instance_autodetect(self):
-        xbmc.log('invidious picking instance automatically.', xbmc.LOGINFO)
+        xbmc.log("invidious picking instance automatically.", xbmc.LOGINFO)
 
         response = requests.get(self.INSTANCESURL, timeout=5)
         data = response.json()
         for instanceinfo in data:
-            xbmc.log('invidious considering instance ' + str(instanceinfo), xbmc.LOGDEBUG)
+            xbmc.log(
+                "invidious considering instance " + str(instanceinfo), xbmc.LOGDEBUG
+            )
             instancename, instance = instanceinfo
-            if 'https' == instance['type'] and False != instance['api']:
-                instance_url = instance['uri']
+            if 'https' == instance["type"] and False != instance["api"]:
+                instance_url = instance["uri"]
                 # Make sure the instance work for us.  This test avoid
                 # those rejecting us with HTTP status 429.  Some
                 # instances return a sensible value for the special
                 # lists but not for an individual video, so test with
                 # a fairly randomly picked video id to avoid partly
                 # working instances.
-                test_video_id = '1l2_uCyBXQ0'
+                test_video_id = "1l2_uCyBXQ0"
                 api_client = invidious_api.InvidiousAPIClient(instance_url)
                 if api_client.fetch_video_information(test_video_id):
                     return instance_url
                 else:
-                    xbmc.log(f'rejecting non-working instance {instanceinfo}', xbmc.LOGDEBUG)
+                    xbmc.log(
+                        f"rejecting non-working instance {instanceinfo}", xbmc.LOGDEBUG
+                    )
 
-        xbmc.log('invidious no working https type instance with API support returned from api.invidious.io.', xbmc.LOGWARNING)
+        xbmc.log(
+            "invidious no working https type instance with API support returned from api.invidious.io.",
+            xbmc.LOGWARNING,
+        )
         # FIXME figure out how to show failing autodetection to the user.
         dialog = xbmcgui.Dialog()
         dialog.notification(
@@ -130,40 +132,44 @@ class InvidiousPlugin:
     def display_search_results(self, results):
         # FIXME Add pagination support?
         for result in results:
-            if result.type not in ['video', 'channel', 'playlist']:
+            if result.type not in ["video", "channel", "playlist"]:
                 raise RuntimeError("unknown result type " + result.type)
 
             list_item = xbmcgui.ListItem(result.heading)
-            list_item.setArt({
-                "thumb": result.thumbnail_url,
-            })
+            list_item.setArt(
+                {
+                    "thumb": result.thumbnail_url,
+                }
+            )
 
             # if this is NOT set, the plugin is called with an invalid handle when trying to play this item
             # seriously, Kodi? come on...
             # https://forum.kodi.tv/showthread.php?tid=173986&pid=1519987#pid1519987
             list_item.setProperty("IsPlayable", "true")
 
-            if 'video' == result.type:
+            if "video" == result.type:
                 datestr = datetime.utcfromtimestamp(result.published).date().isoformat()
 
-                info_tag = ListItemInfoTag(list_item, 'video')
-                info_tag.set_info({
-                    "title": result.heading,
-                    "mediatype": "video",
-                    "plot": result.description,
-                    "credits": result.author,
-                    "date": datestr,
-                    "dateadded": datestr,
-                    "premiered": datestr,
-                    "duration": result.duration
-                })
+                info_tag = ListItemInfoTag(list_item, "video")
+                info_tag.set_info(
+                    {
+                        "title": result.heading,
+                        "mediatype": "video",
+                        "plot": result.description,
+                        "credits": result.author,
+                        "date": datestr,
+                        "dateadded": datestr,
+                        "premiered": datestr,
+                        "duration": result.duration,
+                    }
+                )
 
                 url = self.build_url("play_video", video_id=result.id)
                 self.add_directory_item(url=url, listitem=list_item)
-            elif 'channel' == result.type:
+            elif "channel" == result.type:
                 url = self.build_url("view_channel", channel_id=result.id)
                 self.add_directory_item(url=url, listitem=list_item, isFolder=True)
-            elif 'playlist' == result.type:
+            elif "playlist" == result.type:
                 url = self.build_url("view_playlist", playlist_id=result.id)
                 self.add_directory_item(url=url, listitem=list_item, isFolder=True)
 
@@ -172,7 +178,9 @@ class InvidiousPlugin:
     def display_new_search(self):
         # query search with a dialog
         dialog = xbmcgui.Dialog()
-        search_input = dialog.input(self.addon.getLocalizedString(30001), type=xbmcgui.INPUT_ALPHANUM)
+        search_input = dialog.input(
+            self.addon.getLocalizedString(30001), type=xbmcgui.INPUT_ALPHANUM
+        )
 
         self.display_search_result(search_input)
 
@@ -218,7 +226,7 @@ class InvidiousPlugin:
         # check if playback via MPEG-DASH is possible
         if not self.disable_dash and "dashUrl" in video_info:
             is_helper = inputstreamhelper.Helper("mpd")
-            
+
             if is_helper.check_inputstream():
                 url = video_info["dashUrl"]
                 xbmc.log(f"invidious using mpeg-dash stream {url}.", xbmc.LOGDEBUG)
@@ -226,19 +234,25 @@ class InvidiousPlugin:
                 listitem.setProperty("inputstream", is_helper.inputstream_addon)
                 listitem.setProperty("inputstream.adaptive.manifest_type", "mpd")
             else:
-                xbmc.log("invidious mpeg-dash input helper not available.", xbmc.LOGDEBUG)
+                xbmc.log(
+                    "invidious mpeg-dash input helper not available.", xbmc.LOGDEBUG
+                )
 
         # as a fallback, we use the last oldschool stream, as it is
         # often the best quality.
         if listitem is None:
             url = video_info["formatStreams"][-1]["url"]
-            xbmc.log(f"invidious playback failing back to non-dash stream {url}!", xbmc.LOGINFO)
+            xbmc.log(
+                f"invidious playback failing back to non-dash stream {url}!",
+                xbmc.LOGINFO,
+            )
             # it's pretty complicated to play a video by its URL in Kodi...
             listitem = xbmcgui.ListItem(path=url)
 
         datestr = datetime.utcfromtimestamp(video_info["published"]).date().isoformat()
-        info_tag = ListItemInfoTag(listitem, 'video')
-        info_tag.set_info({
+        info_tag = ListItemInfoTag(listitem, "video")
+        info_tag.set_info(
+            {
                 "title": video_info["title"],
                 "mediatype": "video",
                 "plot": video_info["description"],
@@ -246,19 +260,27 @@ class InvidiousPlugin:
                 "date": datestr,
                 "dateadded": datestr,
                 "premiered": datestr,
-                "duration": str(video_info["lengthSeconds"])
-        })
+                "duration": str(video_info["lengthSeconds"]),
+            }
+        )
         # basilgello: calling 'RunPlugin' via kodi-send results in CScriptRunner::ExecuteScript
-        # which in turn sets add9n_handle to -1 breaking the playback 
+        # which in turn sets addon_handle to -1 breaking the playback
         if self.addon_handle > -1:
-            xbmcplugin.setResolvedUrl(self.addon_handle, succeeded=True, listitem=listitem)
+            xbmcplugin.setResolvedUrl(
+                self.addon_handle, succeeded=True, listitem=listitem
+            )
         else:
             xbmc.Player().play(url, listitem)
 
     def display_main_menu(self):
         def add_list_item(label, path):
-            listitem = xbmcgui.ListItem(label, path=path, )
-            self.add_directory_item(url=self.build_url(path), listitem=listitem, isFolder=True)
+            listitem = xbmcgui.ListItem(
+                label,
+                path=path,
+            )
+            self.add_directory_item(
+                url=self.build_url(path), listitem=listitem, isFolder=True
+            )
 
         # video search item
         add_list_item(self.addon.getLocalizedString(30001), "search_menu")
@@ -271,20 +293,24 @@ class InvidiousPlugin:
 
     def display_search_submenu(self):
         def add_list_item(label, path):
-            listitem = xbmcgui.ListItem(label, path=path, )
-            self.add_directory_item(url=self.build_url(path), listitem=listitem, isFolder=True)
+            listitem = xbmcgui.ListItem(
+                label,
+                path=path,
+            )
+            self.add_directory_item(
+                url=self.build_url(path), listitem=listitem, isFolder=True
+            )
 
         # New search on top.
         add_list_item(self.addon.getLocalizedString(30002), "new_search")
 
         for query in self.search_history.queries():
             url = self.build_url("search", q=query)
-            listitem = xbmcgui.ListItem(query, path=query, )
-            self.add_directory_item(
-                url=url,
-                listitem=listitem,
-                isFolder=True
+            listitem = xbmcgui.ListItem(
+                query,
+                path=query,
             )
+            self.add_directory_item(url=url, listitem=listitem, isFolder=True)
 
         self.end_of_directory()
 
@@ -335,21 +361,26 @@ class InvidiousPlugin:
                 raise RuntimeError("unknown action " + action)
 
         except requests.HTTPError as e:
-            xbmc.log(f'invidous HTTP status {e.response.status_code} during action processing: {e.response.reason}', xbmc.LOGWARNING)
+            xbmc.log(
+                f"invidous HTTP status {e.response.status_code} during action processing: {e.response.reason}",
+                xbmc.LOGWARNING,
+            )
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30003),
                 self.addon.getLocalizedString(30004) + str(e.response.status_code),
-                "error"
+                "error",
             )
 
         except requests.Timeout:
-            xbmc.log('invidous HTTP timed out during action processing', xbmc.LOGWARNING)
+            xbmc.log(
+                "invidous HTTP timed out during action processing", xbmc.LOGWARNING
+            )
             dialog = xbmcgui.Dialog()
             dialog.notification(
                 self.addon.getLocalizedString(30005),
                 self.addon.getLocalizedString(30006),
-                "error"
+                "error",
             )
 
     @classmethod
