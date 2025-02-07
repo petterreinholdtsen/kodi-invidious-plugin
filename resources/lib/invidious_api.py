@@ -1,11 +1,12 @@
 import time
 from collections import namedtuple
+from typing import Iterator, Union
 
 import requests
 import xbmc
 import xbmcaddon
 
-VideoListItem = namedtuple(
+VideoSearchResult = namedtuple(
     "VideoSearchResult",
     [
         "type",
@@ -20,7 +21,7 @@ VideoListItem = namedtuple(
     ],
 )
 
-ChannelListItem = namedtuple(
+ChannelSearchResult = namedtuple(
     "ChannelSearchResult",
     [
         "type",
@@ -33,7 +34,7 @@ ChannelListItem = namedtuple(
     ],
 )
 
-PlaylistListItem = namedtuple(
+PlaylistSearchResult = namedtuple(
     "PlaylistSearchResult",
     [
         "type",
@@ -47,28 +48,61 @@ PlaylistListItem = namedtuple(
     ],
 )
 
+InvidiousApiResponseType = Union[
+    VideoSearchResult, ChannelSearchResult, PlaylistSearchResult
+]
+
 
 class InvidiousAPIClient:
-    def __init__(self, instance_url: str):
+    instance_url: str
+    session: requests.Session
+    addon: xbmcaddon.Addon
+    authenticated: bool
+    username: str | None
+    password: str | None
+
+    def __init__(self, instance_url: str, auth: None | dict[str, str] = None):
         self.instance_url = instance_url.rstrip("/")
+        self.session = requests.Session()
+        self.authenticated = False
+        self.username, self.password = None, None
+        if auth:
+            self.username = auth["username"]
+            self.password = auth["password"]
         self.addon = xbmcaddon.Addon()
 
-    def make_get_request(self, *path: tuple[str], **params: dict[str, str]):
-        base_url = self.instance_url + "/api/v1/"
+    @property
+    def base_url(self) -> str:
+        return self.instance_url + "/api/v1/"
 
-        url_path = "/".join(path)
+    def _login(self) -> None:
+        if not self.username:
+            raise
+        login_response = self.session.post(
+            self.instance_url + "/login",
+            data={
+                "email": self.username,
+                "password": self.password,
+                "action": "signin",
+            },
+        )
 
-        while "//" in url_path:
-            url_path = url_path.replace("//", "/")
+        login_response.raise_for_status()
 
-        assembled_url = base_url + url_path
+        if login_response.ok:
+            self.authenticated = True
+
+    def _make_get_request(
+        self, path: str, params: None | dict[str, str] = None
+    ) -> requests.Response:
+        assembled_url = self.base_url + path
 
         xbmc.log(
             f"invidious ========== request {assembled_url} with {params} started ==========",
             xbmc.LOGDEBUG,
         )
         start = time.time()
-        response = requests.get(assembled_url, params=params, timeout=5)
+        response = self.session.get(assembled_url, params=params, timeout=5)
         end = time.time()
         xbmc.log(
             f"invidious ========== request finished in {end - start}s ==========",
@@ -80,13 +114,15 @@ class InvidiousAPIClient:
                 f"invidious API request {assembled_url} with {params} failed with HTTP status {response.status_code}: {response.reason}.",
                 xbmc.LOGWARNING,
             )
-            return None
+        response.raise_for_status()
 
         return response
 
-    def parse_response(self, response: requests.models.Response):
+    def _parse_list_response(
+        self, response: requests.models.Response
+    ) -> Iterator[InvidiousApiResponseType]:
         if not response or not response.content:
-            return None
+            raise StopIteration()
         data = response.json()
 
         # If a channel or playlist is opened, the videos are packaged
@@ -112,8 +148,7 @@ class InvidiousAPIClient:
                 # (which is usually the lowest quality).
                 else:
                     thumbnail_url = item["videoThumbnails"][-1]["url"]
-
-                yield VideoListItem(
+                yield VideoSearchResult(
                     "video",
                     item["videoId"],
                     thumbnail_url,
@@ -133,7 +168,7 @@ class InvidiousAPIClient:
                     reverse=True,
                 )[0]
 
-                yield ChannelListItem(
+                yield ChannelSearchResult(
                     "channel",
                     item["authorId"],
                     "https:" + thumbnail["url"],
@@ -143,7 +178,7 @@ class InvidiousAPIClient:
                     item["subCount"],
                 )
             elif item["type"] == "playlist":
-                yield PlaylistListItem(
+                yield PlaylistSearchResult(
                     "playlist",
                     item["playlistId"],
                     item["playlistThumbnail"],
@@ -165,27 +200,90 @@ class InvidiousAPIClient:
             "sort_by": "upload_date",
         }
 
-        response = self.make_get_request("search", **params)
+        response = self._make_get_request("search", params)
 
-        return self.parse_response(response)
+        return self._parse_list_response(response)
 
     def fetch_video_information(self, video_id):
-        response = self.make_get_request("videos/", video_id)
-        if not response:
-            return None
+        response = self._make_get_request(f"videos/{video_id}")
+
         return response.json()
 
     def fetch_channel_list(self, channel_id):
-        response = self.make_get_request(f"channels/{channel_id}/videos")
+        response = self._make_get_request(f"channels/{channel_id}/videos")
 
-        return self.parse_response(response)
+        return self._parse_list_response(response)
 
     def fetch_playlist_list(self, playlist_id):
-        response = self.make_get_request(f"playlists/{playlist_id}")
+        response = self._make_get_request(f"playlists/{playlist_id}")
 
-        return self.parse_response(response)
+        return self._parse_list_response(response)
 
-    def fetch_special_list(self, special_list_name):
-        response = self.make_get_request(special_list_name)
+    def fetch_special_list(self, special_list_name: str):
+        response = self._make_get_request(special_list_name)
 
-        return self.parse_response(response)
+        return self._parse_list_response(response)
+
+    def fetch_feed(self) -> Iterator[VideoSearchResult]:
+        if not self.authenticated:
+            self._login()
+        response = self._make_get_request("auth/feed")
+
+        for result in self._parse_list_response(response):
+            if isinstance(result, VideoSearchResult):
+                yield result
+
+    def fetch_subscribed_channels(self) -> Iterator[ChannelSearchResult]:
+        if not self.authenticated:
+            self._login()
+        subscriptions_response = self._make_get_request("auth/subscriptions")
+
+        data = subscriptions_response.json()
+        for author in data:
+            yield self.fetch_channel_info(author["authorId"])
+
+    def fetch_channel_info(self, channel_id: str) -> ChannelSearchResult:
+        response = self._make_get_request(f"channels/{channel_id}")
+
+        data = response.json()
+        thumbnail = sorted(
+            data["authorThumbnails"],
+            key=lambda thumb: thumb["height"],
+            reverse=True,
+        )[0]
+
+        return ChannelSearchResult(
+            "channel",
+            data["authorId"],
+            thumbnail["url"],
+            data["author"],
+            data["description"],
+            data["authorVerified"],
+            data["subCount"],
+        )
+
+    def subscribe(self, channel_id: str) -> None:
+        if not self.authenticated:
+            self._login()
+        reponse = self.session.post(f"{self.base_url}auth/subscriptions/{channel_id}")
+        if reponse.ok:
+            return None
+        raise
+
+    def unsubscribe(self, channel_id: str) -> None:
+        if not self.authenticated:
+            self._login()
+        response = self.session.delete(
+            f"{self.base_url}auth/subscriptions/{channel_id}"
+        )
+        if response.ok:
+            return None
+        raise
+
+    def mark_watched(self, video_id: str) -> None:
+        if not self.authenticated:
+            self._login()
+        reponse = self.session.post(f"{self.base_url}auth/history/{video_id}")
+        if reponse.ok:
+            return None
+        raise

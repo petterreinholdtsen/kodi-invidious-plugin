@@ -58,3 +58,53 @@ msgstr "Instans-innstillinger"
 msgctxt "#30009"
 msgid "Disable Dynamic Adaptive Streaming over HTTP (MPEG-DASH)"
 msgstr "Koble ut dynamisk adaptiv strømming over HTTP (MPEG-DASH)"
+
+msgctxt "#30010"
+msgid "Automatically pick instance URL"
+msgstr ""
+
+msgctxt "#30011"
+msgid "API request failed"
+msgstr ""
+
+msgctxt "#30012"
+msgid "No working instance URL found"
+msgstr ""
+
+msgctxt "#30013"
+msgid "No working https type instance returned from api.invidious.io."
+msgstr ""
+
+msgctxt "#30014"
+msgid "HTTP request {request_url} with {request_params} returned HTTP status {status_code}: {status_reason} error"
+msgstr ""
+
+#, fuzzy
+msgctxt "#30015"
+msgid "Instance username"
+msgstr "Instans-innstillinger"
+
+#, fuzzy
+msgctxt "#30016"
+msgid "Instance password"
+msgstr "Instans-innstillinger"
+
+msgctxt "#30017"
+msgid "Mark items watched on instance"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Show instance trending listing"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Show instance popular listing"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Popular"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Trending"
+msgstr ""
