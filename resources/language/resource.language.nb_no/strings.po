@@ -108,3 +108,7 @@ msgstr ""
 msgctxt "#30021"
 msgid "Trending"
 msgstr ""
+
+msgctxt "#30022"
+msgid "Proxy videos"
+msgstr ""

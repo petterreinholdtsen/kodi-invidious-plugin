@@ -70,6 +70,7 @@ class InvidiousAPIClient:
             self.username = auth["username"]
             self.password = auth["password"]
         self.addon = xbmcaddon.Addon()
+        self.local = ("true" == self.addon.getSetting("local"))
 
     @property
     def base_url(self) -> str:
@@ -101,6 +102,9 @@ class InvidiousAPIClient:
             f"invidious ========== request {assembled_url} with {params} started ==========",
             xbmc.LOGDEBUG,
         )
+        if self.local:
+            params["local"] = "true"
+
         start = time.time()
         response = self.session.get(assembled_url, params=params, timeout=5)
         end = time.time()
