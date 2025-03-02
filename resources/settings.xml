@@ -4,5 +4,6 @@
         <setting label="30010" type="bool" id="auto_instance" default="true"/>
         <setting label="30007" type="text" id="instance_url" default="auto"/>
         <setting label="30009" type="bool" id="disable_dash" default="false"/>
+        <setting label="30015" type="bool" id="local" default="false"/>
     </category>
 </settings>

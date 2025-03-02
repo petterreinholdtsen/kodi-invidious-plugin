@@ -50,6 +50,7 @@ class InvidiousAPIClient:
     def __init__(self, instance_url):
         self.instance_url = instance_url.rstrip("/")
         self.addon = xbmcaddon.Addon()
+        self.local = ("true" == self.addon.getSetting("local"))
 
     def make_get_request(self, *path, **params):
         base_url = self.instance_url + "/api/v1/"
@@ -60,6 +61,9 @@ class InvidiousAPIClient:
             url_path = url_path.replace("//", "/")
 
         assembled_url = base_url + url_path
+
+        if self.local:
+            params["local"] = "true"
 
         xbmc.log(f"invidious ========== request {assembled_url} with {params} started ==========", xbmc.LOGDEBUG)
         start = time.time()
