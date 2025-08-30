@@ -88,7 +88,7 @@ class InvidiousPlugin:
         for instanceinfo in data:
             xbmc.log('invidious considering instance ' + str(instanceinfo), xbmc.LOGDEBUG)
             instancename, instance = instanceinfo
-            if 'https' == instance['type']:
+            if 'https' == instance['type'] and False != instance['api']:
                 instance_url = instance['uri']
                 # Make sure the instance work for us.  This test avoid
                 # those rejecting us with HTTP status 429.  Some
@@ -103,7 +103,7 @@ class InvidiousPlugin:
                 else:
                     xbmc.log(f'rejecting non-working instance {instanceinfo}', xbmc.LOGDEBUG)
 
-        xbmc.log('invidious no working https type instance returned from api.invidious.io.', xbmc.LOGWARNING)
+        xbmc.log('invidious no working https type instance with API support returned from api.invidious.io.', xbmc.LOGWARNING)
         # FIXME figure out how to show failing autodetection to the user.
         dialog = xbmcgui.Dialog()
         dialog.notification(
