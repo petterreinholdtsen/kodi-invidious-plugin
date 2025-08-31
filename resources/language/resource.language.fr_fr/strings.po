@@ -1,7 +1,7 @@
 # Kodi Media Center language file
-# Addon Name: YouTube
+# Addon Name: Invidious
 # Addon id: plugin.video.invidious
-# Addon Provider: TheAssassin
+# Addon Provider: pere
 msgid ""
 msgstr ""
 "Project-Id-Version: XBMC-Addons\n"

@@ -1,14 +1,14 @@
 # Kodi Media Center language file
-# Addon Name: YouTube
+# Addon Name: Invidious
 # Addon id: plugin.video.invidious
-# Addon Provider: TheAssassin
+# Addon Provider: pere
 # Johnny A. Solbu, 2023
-# Petter Reinholdtsen, 2023
+# Petter Reinholdtsen, 2023,2025
 msgid ""
 msgstr ""
 "Project-Id-Version: XBMC-Addons\n"
 "Report-Msgid-Bugs-To: alanwww1@xbmc.org\n"
-"POT-Creation-Date: 2015-09-21 11:01+0000\n"
+"POT-Creation-Date: 2023-08-31 11:01+0000\n"
 "PO-Revision-Date: 2023-08-07 11:19+0200\n"
 "Last-Translator: Petter Reinholdtsen <pere@hungry.com>\n"
 "Language-Team: Norwegian Bokmal <l10n-no@lister.huftis.org>\n"
@@ -61,37 +61,35 @@ msgstr "Koble ut dynamisk adaptiv strømming over HTTP (MPEG-DASH)"
 
 msgctxt "#30010"
 msgid "Automatically pick instance URL"
-msgstr ""
+msgstr "Velg automatisk instanse-URL"
 
 msgctxt "#30011"
 msgid "API request failed"
-msgstr ""
+msgstr "API-forespørselen feilet"
 
 msgctxt "#30012"
 msgid "No working instance URL found"
-msgstr ""
+msgstr "Fant ingen fungerende instanse-URL"
 
 msgctxt "#30013"
 msgid "No working https type instance returned from api.invidious.io."
-msgstr ""
+msgstr "Ingen fungerende instans av https-typen tilsent fra api.invidious.io."
 
 msgctxt "#30014"
 msgid "HTTP request {request_url} with {request_params} returned HTTP status {status_code}: {status_reason} error"
-msgstr ""
+msgstr "HTTP-forespørsel {request_url} med {request_params} returnerte HTTP-status {status_code}: {status_reason}-feil"
 
-#, fuzzy
 msgctxt "#30015"
 msgid "Instance username"
-msgstr "Instans-innstillinger"
+msgstr "Instansbrukernavn"
 
-#, fuzzy
 msgctxt "#30016"
 msgid "Instance password"
-msgstr "Instans-innstillinger"
+msgstr "Instanspassord"
 
 msgctxt "#30017"
 msgid "Mark items watched on instance"
-msgstr ""
+msgstr "Merk sette oppføringer på instansen"
 
 msgctxt "#30018"
 msgid "Show instance trending listing"
@@ -99,11 +97,11 @@ msgstr ""
 
 msgctxt "#30019"
 msgid "Show instance popular listing"
-msgstr ""
+msgstr "Vis instansens populære lister"
 
 msgctxt "#30020"
 msgid "Popular"
-msgstr ""
+msgstr "Popuære"
 
 msgctxt "#30021"
 msgid "Trending"
@@ -111,4 +109,4 @@ msgstr ""
 
 msgctxt "#30022"
 msgid "Proxy videos"
-msgstr ""
+msgstr "Bruk mellomtjener for videoer"
